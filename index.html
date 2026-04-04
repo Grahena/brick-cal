@@ -64,6 +64,19 @@
   /* 表单与输入 */
   .field { margin-bottom: 18px; }
   .field-label { display: block; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 8px; font-weight: 600; }
+
+  .input-with-unit { position: relative; }
+  .input-with-unit input { padding-right: 56px; }
+  .unit-suffix {
+    position: absolute; right: 14px; top: 50%; transform: translateY(-50%);
+    font-size: 0.8rem; color: var(--text-secondary); font-weight: 600;
+  }
+
+  .field-msg {
+    margin-top: 8px; font-size: 0.8rem; color: #d93025; display: none;
+  }
+  .field-msg.show { display: block; }
+  .field-msg.ok { color: #188038; }
   
   select, input {
     width: 100%; padding: 14px 16px; border: 2px solid var(--border-color); border-radius: 12px;
@@ -158,6 +171,11 @@
     border-radius: 6px; font-size: 0.75rem; cursor: pointer; font-weight: 600;
   }
   .del-btn:active { background: rgba(255,59,48,0.1); }
+  .del-btn.confirm { color: #fff; background: #ff3b30; }
+
+  .table-hint {
+    font-size: 0.75rem; color: var(--text-secondary); margin: 6px 0 10px;
+  }
 
   @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 </style>
@@ -209,12 +227,15 @@
   <div class="card" style="padding: 16px 20px;">
     <div class="tabs-header">
       <div class="tab-item active" onclick="switchTab(0)">规格列表</div>
-      <div class="tab-item" onclick="switchTab(1)">新增规格</div>
-      <div class="tab-item" onclick="switchTab(2)">设置</div>
+      <div class="tab-item" onclick="switchTab(1)">设置</div>
     </div>
 
     <div class="tab-pane active" id="pane-0">
-      <div style="max-height: 280px; overflow-y: auto;">
+      <div class="field" style="margin-bottom: 10px;">
+        <input type="text" id="specFilter" placeholder="搜索规格名称" oninput="renderRefTable()">
+      </div>
+      <div class="table-hint">提示：表格可左右滑动查看更多内容</div>
+      <div style="max-height: 280px; overflow: auto;">
         <table>
           <thead><tr><th>规格</th><th>块/架</th><th>单块(m³)</th><th>操作</th></tr></thead>
           <tbody id="refBody"></tbody>
@@ -223,26 +244,42 @@
       <div style="margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--border-color);">
         <div class="field"><label class="field-label">直接新增规格</label><input type="text" id="list_new_name" placeholder="如 12×30×60"></div>
         <div class="result-grid" style="margin-bottom: 0;">
-          <div class="field"><input type="number" id="list_new_perJia" inputmode="numeric" placeholder="每架块数"></div>
-          <div class="field"><input type="number" id="list_new_perKuai" step="any" inputmode="decimal" placeholder="单块立方(m³)"></div>
+          <div class="field">
+            <div class="input-with-unit">
+              <input type="number" id="list_new_perJia" inputmode="numeric" placeholder="每架块数">
+              <span class="unit-suffix">块/架</span>
+            </div>
+          </div>
+          <div class="field">
+            <div class="input-with-unit">
+              <input type="number" id="list_new_perKuai" step="any" inputmode="decimal" placeholder="单块立方">
+              <span class="unit-suffix">m³</span>
+            </div>
+          </div>
         </div>
         <button class="btn btn-primary btn-save-sm" onclick="addSpecFromList()">添加到规格列表</button>
+        <div class="field-msg" id="list_add_msg"></div>
       </div>
     </div>
 
     <div class="tab-pane" id="pane-1">
-      <div class="field"><label class="field-label">规格名称</label><input type="text" id="new_name" placeholder="如 12×30×60"></div>
-      <div class="result-grid" style="margin-bottom: 0;">
-        <div class="field"><label class="field-label">每架块数</label><input type="number" id="new_perJia" inputmode="numeric" placeholder="96"></div>
-        <div class="field"><label class="field-label">单块立方 (m³)</label><input type="number" id="new_perKuai" step="any" inputmode="decimal" placeholder="0.018"></div>
+      <div class="field">
+        <label class="field-label">默认全局单架价格</label>
+        <div class="input-with-unit">
+          <input type="number" id="edit_price" inputmode="decimal">
+          <span class="unit-suffix">元/架</span>
+        </div>
       </div>
-      <button class="btn btn-primary btn-save-sm" onclick="addSpec()">添加至列表</button>
-    </div>
-
-    <div class="tab-pane" id="pane-2">
-      <div class="field"><label class="field-label">默认全局单架价格 (元)</label><input type="number" id="edit_price" inputmode="decimal"></div>
-      <div class="field"><label class="field-label">默认全局架立方 (m³, 仅参考)</label><input type="number" id="edit_lifang" inputmode="decimal"></div>
+      <div class="field">
+        <label class="field-label">默认全局架立方 (仅参考)</label>
+        <div class="input-with-unit">
+          <input type="number" id="edit_lifang" inputmode="decimal">
+          <span class="unit-suffix">m³</span>
+        </div>
+      </div>
       <button class="btn btn-primary btn-save-sm" onclick="saveGlobal()">保存设置</button>
+      <button class="btn btn-save-sm" onclick="restoreGlobalDefaults()">恢复默认值</button>
+      <div class="field-msg" id="settings_msg"></div>
     </div>
   </div>
 </div>
@@ -252,6 +289,10 @@
 let globalPrice = 310;
 let globalLifang = 1.728;
 let mode = 'jiashu';
+const DEFAULT_PRICE = 310;
+const DEFAULT_LIFANG = 1.728;
+let pendingDeleteIndex = -1;
+let pendingDeleteTimer = null;
 // 补全后的初始规格数组
 let specs = [
   { name:'8×30×60',  perJia:120, perKuai:0.0144 },
@@ -273,6 +314,7 @@ function init() {
   renderSelect();
   renderRefTable();
   updateUISettings();
+  bindListAddInputFlow();
 }
 
 // 载入与保存本地数据
@@ -354,71 +396,134 @@ function renderSelect() {
 
 function renderRefTable() {
   const tbody = document.getElementById('refBody');
-  tbody.innerHTML = specs.map((s, i) => `
+  const keyword = (document.getElementById('specFilter')?.value || '').trim().toLowerCase();
+  const rows = specs
+    .map((s, i) => ({s, i}))
+    .filter(({s}) => !keyword || s.name.toLowerCase().includes(keyword));
+
+  tbody.innerHTML = rows.map(({s, i}) => `
     <tr>
       <td class="td-spec">${s.name}</td>
       <td class="td-mono">${s.perJia}</td>
       <td class="td-mono">${s.perKuai.toString().padEnd(7, '0').substring(0,7)}</td>
-      <td><button class="del-btn" onclick="deleteSpec(${i})">删除</button></td>
+      <td><button class="del-btn ${pendingDeleteIndex === i ? 'confirm' : ''}" onclick="deleteSpec(${i})">${pendingDeleteIndex === i ? '确认删除' : '删除'}</button></td>
     </tr>
   `).join('');
 }
 
+function setFieldMsg(id, msg, ok = false) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.textContent = msg || '';
+  el.classList.toggle('show', !!msg);
+  el.classList.toggle('ok', !!msg && ok);
+}
+
 function addSpecCore(name, pJ, pK) {
-  if (!(name && pJ && pK)) {
-    alert('请完整填写规格信息(名称、块数、体积)');
-    return false;
-  }
+  if (!name) return {ok: false, msg: '请填写规格名称'};
+  if (!Number.isFinite(pJ) || pJ <= 0) return {ok: false, msg: '每架块数需为大于 0 的数字'};
+  if (!Number.isFinite(pK) || pK <= 0) return {ok: false, msg: '单块体积需为大于 0 的数字'};
+  if (specs.some(s => s.name === name)) return {ok: false, msg: '该规格已存在，请勿重复添加'};
+
   specs.push({name, perJia: pJ, perKuai: pK});
+  if (pendingDeleteTimer) clearTimeout(pendingDeleteTimer);
+  pendingDeleteIndex = -1;
+  setFieldMsg('list_add_msg', '', false);
   saveData();
   renderSelect();
   renderRefTable();
-  return true;
-}
-
-function addSpec() {
-  const name = document.getElementById('new_name').value.trim();
-  const pJ = parseInt(document.getElementById('new_perJia').value);
-  const pK = parseFloat(document.getElementById('new_perKuai').value);
-
-  if (addSpecCore(name, pJ, pK)) {
-    switchTab(0);
-    // 清空输入
-    document.getElementById('new_name').value = '';
-    document.getElementById('new_perJia').value = '';
-    document.getElementById('new_perKuai').value = '';
-  }
+  return {ok: true, msg: '已添加'};
 }
 
 function addSpecFromList() {
   const name = document.getElementById('list_new_name').value.trim();
   const pJ = parseInt(document.getElementById('list_new_perJia').value);
   const pK = parseFloat(document.getElementById('list_new_perKuai').value);
+  const result = addSpecCore(name, pJ, pK);
 
-  if (addSpecCore(name, pJ, pK)) {
+  if (result.ok) {
     document.getElementById('list_new_name').value = '';
     document.getElementById('list_new_perJia').value = '';
     document.getElementById('list_new_perKuai').value = '';
+    setFieldMsg('list_add_msg', result.msg, true);
+    document.getElementById('list_new_name').focus();
+  } else {
+    setFieldMsg('list_add_msg', result.msg, false);
   }
+}
+
+function bindListAddInputFlow() {
+  const nameEl = document.getElementById('list_new_name');
+  const perJiaEl = document.getElementById('list_new_perJia');
+  const perKuaiEl = document.getElementById('list_new_perKuai');
+  if (!(nameEl && perJiaEl && perKuaiEl)) return;
+
+  nameEl.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      perJiaEl.focus();
+    }
+  });
+  perJiaEl.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      perKuaiEl.focus();
+    }
+  });
+  perKuaiEl.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      addSpecFromList();
+    }
+  });
 }
 
 function deleteSpec(i) {
-  if (confirm(`确定要删除规格「${specs[i].name}」吗？`)) {
-    specs.splice(i, 1);
-    saveData();
-    renderSelect();
+  if (pendingDeleteIndex !== i) {
+    pendingDeleteIndex = i;
+    if (pendingDeleteTimer) clearTimeout(pendingDeleteTimer);
+    pendingDeleteTimer = setTimeout(() => {
+      pendingDeleteIndex = -1;
+      renderRefTable();
+    }, 3000);
     renderRefTable();
-    calculate(); // 重新计算，防止被删除的规格还在计算结果中
+    return;
   }
+
+  specs.splice(i, 1);
+  pendingDeleteIndex = -1;
+  if (pendingDeleteTimer) clearTimeout(pendingDeleteTimer);
+  saveData();
+  renderSelect();
+  renderRefTable();
+  calculate();
 }
 
 function saveGlobal() {
-  globalPrice = parseFloat(document.getElementById('edit_price').value) || 310;
-  globalLifang = parseFloat(document.getElementById('edit_lifang').value) || 1.728;
+  const priceVal = parseFloat(document.getElementById('edit_price').value);
+  const lifangVal = parseFloat(document.getElementById('edit_lifang').value);
+
+  if (!Number.isFinite(priceVal) || priceVal <= 0) {
+    setFieldMsg('settings_msg', '单架价格需为大于 0 的数字', false);
+    return;
+  }
+  if (!Number.isFinite(lifangVal) || lifangVal <= 0) {
+    setFieldMsg('settings_msg', '架立方需为大于 0 的数字', false);
+    return;
+  }
+
+  globalPrice = priceVal;
+  globalLifang = lifangVal;
   saveData();
   updateUISettings();
   calculate();
-  alert('设置已保存');
+  setFieldMsg('settings_msg', '设置已保存', true);
+}
+
+function restoreGlobalDefaults() {
+  document.getElementById('edit_price').value = DEFAULT_PRICE;
+  document.getElementById('edit_lifang').value = DEFAULT_LIFANG;
+  saveGlobal();
 }
 
 function switchTab(idx) {
