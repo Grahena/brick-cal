@@ -33,7 +33,7 @@
   }
 
   /* 布局容器 */
-  。app-container { max-width: 480px; margin: 0 auto; }
+  .app-container { max-width: 480px; margin: 0 auto; }
 
   /* 页头 */
   header { margin-bottom: 28px; text-align: center; }
@@ -62,7 +62,7 @@
   }
 
   /* 表单与输入 */
-  。field { margin-bottom: 18px; }
+  .field { margin-bottom: 18px; }
   .field-label { display: block; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 8px; font-weight: 600; }
   
   select, input {
@@ -84,11 +84,11 @@
   }
 
   /* 分段选择器 (按架数/按块数) */
-  。segmented-control {
+  .segmented-control {
     display: flex; background: #eee; padding: 4px; border-radius: 12px;
     margin-bottom: 18px; border: 1px solid #e0e0e0;
   }
-  。segment-btn {
+  .segment-btn {
     flex: 1; border: none; padding: 12px; border-radius: 9px;
     background: transparent; font-family: inherit; font-size: 0.9rem; font-weight: 600;
     color: var(--text-secondary); cursor: pointer; transition: all 0.2s var(--ease);
@@ -109,13 +109,13 @@
   
   .result-item { background: #fff; padding: 16px; border-radius: 12px; border: 1px solid #eee;}
   .result-item .key { font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 4px; display: block;}
-  。result-item 。val { font-family: 'JetBrains Mono', monospace; font-size: 1.1rem; font-weight: 700; color: var(--text-main); }
+  .result-item .val { font-family: 'JetBrains Mono', monospace; font-size: 1.1rem; font-weight: 700; color: var(--text-main); }
   
   .total-price-box {
     text-align: center; background: var(--accent-light); padding: 20px; border-radius: 12px;
     border: 1px solid rgba(192, 90, 64, 0.1);
   }
-  。total-price-box 。key { color: var(--accent); font-weight: 700; font-size: 0.9rem; }
+  .total-price-box .key { color: var(--accent); font-weight: 700; font-size: 0.9rem; }
   .total-price-box .val-lg { font-family: 'JetBrains Mono', monospace; font-size: 2rem; font-weight: 700; color: var(--accent); margin-top: 4px;}
 
   /* 按钮样式 */
@@ -138,7 +138,7 @@
     position: relative; font-weight: 600;
   }
   .tab-item.active { color: var(--accent); }
-  。tab-item.active::after {
+  .tab-item.active::after {
     content: ''; position: absolute; bottom: -1px; left: 0; width: 100%; height: 3px;
     background: var(--accent); border-radius: 3px 3px 0 0;
   }
@@ -166,7 +166,7 @@
 
 <div class="app-container">
   <header>
-    <h1>brick cal</h1>
+    <!-- <h1>砖块计算器 Pro</h1> -->
     <div class="header-meta">
       <span class="meta-tag" id="chip_price">--</span>
       <span class="meta-tag" id="chip_lifang">--</span>
@@ -219,6 +219,14 @@
           <thead><tr><th>规格</th><th>块/架</th><th>单块(m³)</th><th>操作</th></tr></thead>
           <tbody id="refBody"></tbody>
         </table>
+      </div>
+      <div style="margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--border-color);">
+        <div class="field"><label class="field-label">直接新增规格</label><input type="text" id="list_new_name" placeholder="如 12×30×60"></div>
+        <div class="result-grid" style="margin-bottom: 0;">
+          <div class="field"><input type="number" id="list_new_perJia" inputmode="numeric" placeholder="每架块数"></div>
+          <div class="field"><input type="number" id="list_new_perKuai" step="any" inputmode="decimal" placeholder="单块立方(m³)"></div>
+        </div>
+        <button class="btn btn-primary btn-save-sm" onclick="addSpecFromList()">添加到规格列表</button>
       </div>
     </div>
 
@@ -340,8 +348,7 @@ function calculate() {
 // ── 管理区域功能 ──────────────────────────────────────────────
 function renderSelect() {
   const sel = document.getElementById('specSelect');
-  // 按照规格名字排序，方便查找
-  specs.sort((a,b) => a.name.localeCompare(b.name, undefined, {numeric: true}));
+  // 按 specs 数组原始顺序渲染
   sel.innerHTML = specs.map((s, i) => `<option value="${i}">${s.name} (${s.perJia}块/架)</option>`).join('');
 }
 
@@ -357,23 +364,41 @@ function renderRefTable() {
   `).join('');
 }
 
+function addSpecCore(name, pJ, pK) {
+  if (!(name && pJ && pK)) {
+    alert('请完整填写规格信息(名称、块数、体积)');
+    return false;
+  }
+  specs.push({name, perJia: pJ, perKuai: pK});
+  saveData();
+  renderSelect();
+  renderRefTable();
+  return true;
+}
+
 function addSpec() {
   const name = document.getElementById('new_name').value.trim();
   const pJ = parseInt(document.getElementById('new_perJia').value);
   const pK = parseFloat(document.getElementById('new_perKuai').value);
-  
-  if (name && pJ && pK) {
-    specs.push({name, perJia: pJ, perKuai: pK});
-    saveData();
-    renderSelect();
-    renderRefTable();
+
+  if (addSpecCore(name, pJ, pK)) {
     switchTab(0);
     // 清空输入
     document.getElementById('new_name').value = '';
     document.getElementById('new_perJia').value = '';
     document.getElementById('new_perKuai').value = '';
-  } else {
-    alert('请完整填写规格信息(名称、块数、体积)');
+  }
+}
+
+function addSpecFromList() {
+  const name = document.getElementById('list_new_name').value.trim();
+  const pJ = parseInt(document.getElementById('list_new_perJia').value);
+  const pK = parseFloat(document.getElementById('list_new_perKuai').value);
+
+  if (addSpecCore(name, pJ, pK)) {
+    document.getElementById('list_new_name').value = '';
+    document.getElementById('list_new_perJia').value = '';
+    document.getElementById('list_new_perKuai').value = '';
   }
 }
 
