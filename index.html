@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>砖块计算器 Pro - 数据看板版</title>
+<title>砖块计算器 Pro - 完整版</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <style>
@@ -33,7 +33,6 @@
   .section-title { font-size: 1rem; font-weight: 700; margin-bottom: 18px; display: flex; align-items: center; gap: 8px; }
   .section-title::before { content: ''; width: 4px; height: 16px; background: var(--accent); border-radius: 2px; }
 
-  /* 输入组件 */
   .field { margin-bottom: 20px; }
   .field-label { display: block; font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 8px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
   select, input { width: 100%; padding: 14px 16px; border: 2px solid #edf0f3; border-radius: 14px; background: #f9fafb; font-family: inherit; font-size: 1rem; transition: all 0.2s ease; outline: none; }
@@ -43,7 +42,6 @@
   .segment-btn { flex: 1; border: none; padding: 10px; border-radius: 10px; background: transparent; font-size: 0.85rem; font-weight: 600; color: var(--text-secondary); cursor: pointer; transition: 0.2s; }
   .segment-btn.active { background: #fff; color: var(--accent); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
 
-  /* 结果展示与图表 */
   .result-box { display: none; animation: slideUp 0.5s var(--ease); }
   .result-box.show { display: block; }
   
@@ -52,13 +50,12 @@
   .res-item .label { font-size: 0.7rem; color: var(--text-secondary); display: block; margin-bottom: 4px; }
   .res-item .value { font-family: 'JetBrains Mono', monospace; font-size: 1.1rem; font-weight: 700; color: var(--text-main); }
 
-  .chart-container { position: relative; height: 220px; width: 100%; margin: 20px 0; }
+  .chart-container { position: relative; height: 200px; width: 100%; margin: 15px 0; }
   
   .total-card { background: linear-gradient(135deg, var(--accent), #e06c4f); color: white; padding: 24px; border-radius: 20px; text-align: center; }
   .total-card .label { font-size: 0.9rem; opacity: 0.9; font-weight: 600; }
   .total-card .price { font-family: 'JetBrains Mono', monospace; font-size: 2.2rem; font-weight: 700; margin-top: 4px; }
 
-  /* 列表样式 */
   .tab-nav { display: flex; gap: 16px; margin-bottom: 20px; border-bottom: 1px solid #eee; }
   .tab-btn { padding: 10px 4px; font-size: 0.9rem; color: var(--text-secondary); cursor: pointer; border-bottom: 2px solid transparent; transition: 0.2s; font-weight: 600; }
   .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
@@ -84,7 +81,7 @@
   </header>
 
   <div class="card">
-    <div class="section-title">参数输入</div>
+    <div class="section-title">计算器</div>
     <div class="field">
       <label class="field-label">规格选择</label>
       <select id="specSelect" onchange="calculate()"></select>
@@ -97,11 +94,10 @@
         <button class="segment-btn" id="btn-jiashu" onclick="setMode('jiashu')">按架数</button>
         <button class="segment-btn" id="btn-kuaishu" onclick="setMode('kuaishu')">按块数</button>
       </div>
-      <input type="number" id="inputVal" inputmode="decimal" placeholder="输入数值" oninput="calculate()">
+      <input type="number" id="inputVal" inputmode="decimal" placeholder="输入墙面平方数" oninput="calculate()">
     </div>
 
     <div class="result-box" id="resultBox">
-      <div class="section-title">计算结果</div>
       <div class="result-summary">
         <div class="res-item"><span class="label">需用架数</span><span class="value" id="r_jia">--</span></div>
         <div class="res-item"><span class="label">总块数</span><span class="value" id="r_kuai">--</span></div>
@@ -123,11 +119,11 @@
   <div class="card">
     <div class="tab-nav">
       <div class="tab-btn active" onclick="switchTab(0)">规格库</div>
-      <div class="tab-btn" onclick="switchTab(1)">全局设置</div>
+      <div class="tab-btn" onclick="switchTab(1)">设置</div>
     </div>
     
     <div class="tab-content active" id="tab-0">
-      <div style="max-height: 240px; overflow: auto;">
+      <div style="max-height: 280px; overflow: auto;">
         <table id="specTable">
           <thead><tr><th>名称</th><th>块/架</th><th>单块m³</th><th>操作</th></tr></thead>
           <tbody id="specBody"></tbody>
@@ -157,28 +153,40 @@
 </div>
 
 <script>
-// --- 初始化数据 ---
-let specs = [
-  { name:'12×30×60', perJia:80, perKuai:0.0216 },
-  { name:'15×30×60', perJia:64, perKuai:0.027 },
-  { name:'20×30×60', perJia:48, perKuai:0.036 },
+// --- 恢复所有默认规格数据 ---
+let defaultSpecs = [
+  { name:'8×30×60',  perJia:120, perKuai:0.0144 },
+  { name:'10×30×60', perJia:96,  perKuai:0.018  },
+  { name:'12×30×60', perJia:80,  perKuai:0.0216 },
+  { name:'15×30×60', perJia:64,  perKuai:0.027  },
+  { name:'17×30×60', perJia:56,  perKuai:0.0306 },
+  { name:'20×30×60', perJia:48,  perKuai:0.036  },
+  { name:'24×30×60', perJia:40,  perKuai:0.0432 },
   { name:'10×24×60', perJia:120, perKuai:0.0144 },
-  { name:'12×24×60', perJia:100, perKuai:0.01728 }
+  { name:'12×24×60', perJia:100, perKuai:0.01728 },
+  { name:'20×24×60', perJia:60,  perKuai:0.0288 },
+  { name:'24×24×60', perJia:50,  perKuai:0.03456 }
 ];
+
+let specs = [];
 let globalPrice = 310;
 let globalLifang = 1.728;
 let mode = 'pingfang';
 let myChart = null;
 
 function init() {
-  const savedSpecs = localStorage.getItem('brick_v3_specs');
-  const savedGlobal = localStorage.getItem('brick_v3_global');
-  if(savedSpecs) specs = JSON.parse(savedSpecs);
+  const savedSpecs = localStorage.getItem('brick_v4_specs');
+  const savedGlobal = localStorage.getItem('brick_v4_global');
+  
+  // 如果没有保存过规格，则使用默认的11种规格
+  specs = savedSpecs ? JSON.parse(savedSpecs) : defaultSpecs;
+  
   if(savedGlobal) {
     const g = JSON.parse(savedGlobal);
     globalPrice = g.price;
     globalLifang = g.lifang;
   }
+  
   renderSelect();
   renderTable();
   updateHeader();
@@ -191,7 +199,7 @@ function initChart() {
   myChart = new Chart(ctx, {
     type: 'doughnut',
     data: {
-      labels: ['整架量', '散砖量'],
+      labels: ['整架量 (架)', '余量 (架)'],
       datasets: [{
         data: [0, 0],
         backgroundColor: ['#c05a40', '#edf0f3'],
@@ -202,10 +210,9 @@ function initChart() {
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      cutout: '70%',
+      cutout: '75%',
       plugins: {
-        legend: { position: 'bottom', labels: { usePointStyle: true, font: { size: 11 } } },
-        tooltip: { enabled: true }
+        legend: { position: 'bottom', labels: { usePointStyle: true, font: { size: 11, family: 'Inter' } } }
       }
     }
   });
@@ -214,12 +221,11 @@ function initChart() {
 function updateChart(jiashu) {
   const fullRacks = Math.floor(jiashu);
   const remainder = jiashu - fullRacks;
-  
   myChart.data.datasets[0].data = [fullRacks, remainder.toFixed(2)];
   myChart.update();
 }
 
-// --- 核心计算 ---
+// --- 计算核心 ---
 function calculate() {
   const val = parseFloat(document.getElementById('inputVal').value);
   const spec = specs[document.getElementById('specSelect').value];
@@ -231,16 +237,17 @@ function calculate() {
 
   let kuaishu, jiashu, persq = "--";
 
-  // 平方逻辑
   const dims = spec.name.split(/[×xX*]/);
   if (dims.length >= 2) {
     const h = parseFloat(dims[dims.length-2]) / 100;
     const l = parseFloat(dims[dims.length-1]) / 100;
     const oneArea = h * l;
-    persq = (1 / oneArea).toFixed(2);
-    if (mode === 'pingfang') {
-      kuaishu = Math.ceil(val / oneArea);
-      jiashu = kuaishu / spec.perJia;
+    if (oneArea > 0) {
+      persq = (1 / oneArea).toFixed(2);
+      if (mode === 'pingfang') {
+        kuaishu = Math.ceil(val / oneArea);
+        jiashu = kuaishu / spec.perJia;
+      }
     }
   }
 
@@ -252,27 +259,26 @@ function calculate() {
     jiashu = kuaishu / spec.perJia;
   }
 
-  // 更新UI
   document.getElementById('r_jia').textContent = jiashu.toFixed(2);
   document.getElementById('r_kuai').textContent = kuaishu;
   document.getElementById('r_lifang').textContent = (kuaishu * spec.perKuai).toFixed(3);
-  document.getElementById('r_persq').textContent = persq + " 块";
+  document.getElementById('r_persq').textContent = persq + " 块/㎡";
   document.getElementById('r_total').textContent = '¥ ' + (jiashu * globalPrice).toFixed(2);
   
   document.getElementById('resultBox').classList.add('show');
   updateChart(jiashu);
 }
 
-// --- 辅助功能 ---
+// --- 其它逻辑 ---
 function setMode(m) {
   mode = m;
   document.querySelectorAll('.segment-btn').forEach(b => b.classList.toggle('active', b.id === 'btn-'+m));
-  document.getElementById('inputVal').placeholder = m === 'pingfang' ? '输入墙面平方' : (m === 'jiashu' ? '输入总架数' : '输入总块数');
+  document.getElementById('inputVal').placeholder = m === 'pingfang' ? '输入墙面平方' : (m === 'jiashu' ? '输入架数' : '输入块数');
   calculate();
 }
 
 function renderSelect() {
-  document.getElementById('specSelect').innerHTML = specs.map((s, i) => `<option value="${i}">${s.name}</option>`).join('');
+  document.getElementById('specSelect').innerHTML = specs.map((s, i) => `<option value="${i}">${s.name} (${s.perJia}块/架)</option>`).join('');
 }
 
 function renderTable() {
@@ -287,28 +293,26 @@ function addSpec() {
   const k = parseFloat(document.getElementById('new_kuai').value);
   if(n && j && k) {
     specs.push({name:n, perJia:j, perKuai:k});
-    saveData();
-    renderSelect(); renderTable();
+    saveData(); renderSelect(); renderTable();
   }
 }
 
 function delSpec(i) {
-  specs.splice(i, 1);
-  saveData();
-  renderSelect(); renderTable();
+  if(confirm('确定删除该规格吗？')) {
+    specs.splice(i, 1);
+    saveData(); renderSelect(); renderTable();
+  }
 }
 
 function saveSettings() {
   globalPrice = parseFloat(document.getElementById('edit_price').value) || 0;
   globalLifang = parseFloat(document.getElementById('edit_lifang').value) || 0;
-  saveData();
-  updateHeader();
-  calculate();
+  saveData(); updateHeader(); calculate();
 }
 
 function saveData() {
-  localStorage.setItem('brick_v3_specs', JSON.stringify(specs));
-  localStorage.setItem('brick_v3_global', JSON.stringify({price:globalPrice, lifang:globalLifang}));
+  localStorage.setItem('brick_v4_specs', JSON.stringify(specs));
+  localStorage.setItem('brick_v4_global', JSON.stringify({price:globalPrice, lifang:globalLifang}));
 }
 
 function updateHeader() {
