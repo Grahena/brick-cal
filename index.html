@@ -238,11 +238,11 @@
       <div class="table-hint">提示：表格可左右滑动查看更多内容</div>
       <div style="max-height: 280px; overflow: auto;">
         <table>
-          <thead><tr><th>规格</th><th>块/架</th><th>单块(m³)</th><th>操作</th></tr></thead>
+          <thead><tr><th>规格</th><th>块/架</th><th>单块(m³)</th></tr></thead>
           <tbody id="refBody"></tbody>
         </table>
       </div>
-      <div style="margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--border-color);">
+      <div style="display: none; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--border-color);">
         <div class="field"><label class="field-label">直接新增规格</label><input type="text" id="list_new_name" placeholder="如 12×30×60"></div>
         <div class="result-grid" style="margin-bottom: 0;">
           <div class="field">
@@ -287,10 +287,10 @@
 
 <script>
 // ── 数据初始化 (补全并修正后的数据) ───────────────────────
-let globalPrice = 310;
+let globalPrice = 180;
 let globalLifang = 1.728;
 let mode = 'jiashu';
-const DEFAULT_PRICE = 310;
+const DEFAULT_PRICE = 180;
 const DEFAULT_LIFANG = 1.728;
 let pendingDeleteIndex = -1;
 let pendingDeleteTimer = null;
@@ -436,7 +436,7 @@ function renderRefTable() {
       <td class="td-spec">${s.name}</td>
       <td class="td-mono">${s.perJia}</td>
       <td class="td-mono">${s.perKuai.toString().padEnd(7, '0').substring(0,7)}</td>
-      <td><button class="del-btn ${pendingDeleteIndex === i ? 'confirm' : ''}" onclick="deleteSpec(${i})">${pendingDeleteIndex === i ? '确认删除' : '删除'}</button></td>
+
     </tr>
   `).join('');
 }
