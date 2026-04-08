@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>砖块计算器 Pro</title>
+<title>计算器</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -12,9 +12,12 @@
     --text-main: #1d1d1f;
     --text-secondary: #86868b;
     --border-color: #d2d2d7;
+    
+    /* 核心点缀色：砖红色 */
     --accent: #c05a40; 
     --accent-hover: #a84e36;
     --accent-light: rgba(192, 90, 64, 0.08);
+    
     --shadow-card: 0 8px 24px rgba(0,0,0,0.05);
     --ease: cubic-bezier(0.4, 0, 0.2, 1);
   }
@@ -23,22 +26,32 @@
   
   body {
     background: var(--bg-app);
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     color: var(--text-main);
+    line-height: 1.5;
     padding: 24px 16px 50px;
   }
 
+  /* 布局容器 */
   .app-container { max-width: 480px; margin: 0 auto; }
 
-  /* 核心卡片 - 加入按下动效 */
+  /* 页头 */
+  header { margin-bottom: 28px; text-align: center; }
+  header h1 { font-size: 1.6rem; font-weight: 700; color: var(--text-main); letter-spacing: -0.5px; margin-bottom: 8px;}
+  .header-meta { display: flex; justify-content: center; gap: 8px; }
+  .meta-tag {
+    font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--accent);
+    background: var(--accent-light); padding: 4px 12px; border-radius: 20px; font-weight: 500;
+  }
+
+  /* 现代卡片设计 */
   .card {
     background: var(--bg-card); border-radius: 20px; padding: 24px;
     margin-bottom: 20px; box-shadow: var(--shadow-card);
     border: 1px solid rgba(0,0,0,0.02);
     transition: transform 0.2s var(--ease), box-shadow 0.2s var(--ease);
   }
-  /* 卡片轻微按压反馈 */
-  .card:active { transform: scale(0.995); box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
+  .card:active { transform: scale(0.99); box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
 
   .section-title {
     font-size: 1.1rem; font-weight: 700; color: var(--text-main);
@@ -48,13 +61,27 @@
     content: ''; width: 6px; height: 18px; background: var(--accent); border-radius: 3px;
   }
 
+  /* 表单与输入 */
   .field { margin-bottom: 18px; }
   .field-label { display: block; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 8px; font-weight: 600; }
 
+  .input-with-unit { position: relative; }
+  .input-with-unit input { padding-right: 56px; }
+  .unit-suffix {
+    position: absolute; right: 14px; top: 50%; transform: translateY(-50%);
+    font-size: 0.8rem; color: var(--text-secondary); font-weight: 600;
+  }
+
+  .field-msg {
+    margin-top: 8px; font-size: 0.8rem; color: #d93025; display: none;
+  }
+  .field-msg.show { display: block; }
+  .field-msg.ok { color: #188038; }
+  
   select, input {
     width: 100%; padding: 14px 16px; border: 2px solid var(--border-color); border-radius: 12px;
-    background: #fff; font-size: 1rem; transition: all 0.2s var(--ease);
-    -webkit-appearance: none;
+    background: #fff; font-family: inherit; font-size: 1rem; color: var(--text-main);
+    transition: all 0.2s var(--ease); appearance: none;
   }
   
   select:focus, input:focus {
@@ -62,19 +89,23 @@
     box-shadow: 0 0 0 4px var(--accent-light);
   }
 
-  /* 分段选择器 - 加入点击缩放反馈 */
+  /* 下拉箭头图标 */
+  .select-wrapper { position: relative; }
+  .select-wrapper::after {
+    content: '▼'; font-size: 0.8rem; color: var(--text-secondary);
+    position: absolute; right: 16px; top: 50%; transform: translateY(-50%); pointer-events: none;
+  }
+
+  /* 分段选择器 (按架数/按块数) */
   .segmented-control {
     display: flex; background: #eee; padding: 4px; border-radius: 12px;
     margin-bottom: 18px; border: 1px solid #e0e0e0;
   }
   .segment-btn {
     flex: 1; border: none; padding: 12px; border-radius: 9px;
-    background: transparent; font-size: 0.9rem; font-weight: 600;
-    color: var(--text-secondary); cursor: pointer; 
-    transition: all 0.2s var(--ease);
+    background: transparent; font-family: inherit; font-size: 0.9rem; font-weight: 600;
+    color: var(--text-secondary); cursor: pointer; transition: all 0.2s var(--ease);
   }
-  /* 按钮按下时的缩放效果 */
-  .segment-btn:active { transform: scale(0.95); opacity: 0.8; }
   .segment-btn.active {
     background: #fff; color: var(--accent); box-shadow: 0 2px 8px rgba(0,0,0,0.1);
   }
@@ -89,60 +120,102 @@
   
   .result-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
   
-  .result-item { 
-    background: #fff; padding: 16px; border-radius: 12px; border: 1px solid #eee;
-    transition: transform 0.2s var(--ease);
-  }
-  .result-item:hover { transform: translateY(-2px); }
-
-  .result-item .key { font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 4px; display: block; }
+  .result-item { background: #fff; padding: 16px; border-radius: 12px; border: 1px solid #eee;}
+  .result-item .key { font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 4px; display: block;}
   .result-item .val { font-family: 'JetBrains Mono', monospace; font-size: 1.1rem; font-weight: 700; color: var(--text-main); }
   
   .total-price-box {
     text-align: center; background: var(--accent-light); padding: 20px; border-radius: 12px;
     border: 1px solid rgba(192, 90, 64, 0.1);
-    transition: all 0.3s var(--ease);
   }
   .total-price-box .key { color: var(--accent); font-weight: 700; font-size: 0.9rem; }
-  .total-price-box .val-lg { font-family: 'JetBrains Mono', monospace; font-size: 2rem; font-weight: 700; color: var(--accent); margin-top: 4px; }
+  .total-price-box .val-lg { font-family: 'JetBrains Mono', monospace; font-size: 2rem; font-weight: 700; color: var(--accent); margin-top: 4px;}
 
-  /* 表格滚动优化 */
-  .table-container { max-height: 320px; overflow: auto; border-radius: 8px; }
+  /* 按钮样式 */
+  .btn {
+    width: 100%; padding: 16px; border: none; border-radius: 12px; cursor: pointer;
+    font-family: inherit; font-weight: 700; font-size: 1rem; text-align: center;
+    transition: all 0.2s var(--ease);
+  }
+  .btn-primary { background: var(--accent); color: white; }
+  .btn-primary:hover { background: var(--accent-hover); }
+  .btn-primary:active { transform: scale(0.98); }
+  
+  .btn-save-sm { background: #f0f2f5; color: var(--text-main); font-size: 0.85rem; padding: 10px; margin-top: 10px;}
+  .btn-save-sm:active { background: #e2e4e8; }
+
+  /* 管理选项卡与表格 */
+  .tabs-header { display: flex; gap: 20px; border-bottom: 1px solid var(--border-color); margin-bottom: 20px;}
+  .tab-item {
+    padding: 12px 4px; font-size: 0.9rem; color: var(--text-secondary); cursor: pointer;
+    position: relative; font-weight: 600;
+  }
+  .tab-item.active { color: var(--accent); }
+  .tab-item.active::after {
+    content: ''; position: absolute; bottom: -1px; left: 0; width: 100%; height: 3px;
+    background: var(--accent); border-radius: 3px 3px 0 0;
+  }
+  .tab-pane { display: none; }
+  .tab-pane.active { display: block; animation: fadeIn 0.3s; }
+
   table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
-  th { text-align: left; padding: 12px 8px; color: var(--text-secondary); border-bottom: 1px solid var(--border-color); background: #fff; position: sticky; top: 0; }
-  td { padding: 12px 8px; border-bottom: 1px solid #f0f0f2; }
+  th { text-align: left; padding: 12px 8px; color: var(--text-secondary); font-weight: 600; border-bottom: 1px solid var(--border-color); }
+  td { padding: 12px 8px; border-bottom: 1px solid #f0f0f2; vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  
   .td-spec { font-weight: 600; color: var(--text-main); }
-  .td-mono { font-family: 'JetBrains Mono', monospace; }
+  .td-mono { font-family: 'JetBrains Mono', monospace; color: #555; }
+  
+  .del-btn {
+    color: #ff3b30; border: 1px solid #ff3b30; background: transparent; padding: 4px 8px;
+    border-radius: 6px; font-size: 0.75rem; cursor: pointer; font-weight: 600;
+  }
+  .del-btn:active { background: rgba(255,59,48,0.1); }
+  .del-btn.confirm { color: #fff; background: #ff3b30; }
 
-  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  .table-hint {
+    font-size: 0.75rem; color: var(--text-secondary); margin: 6px 0 10px;
+  }
+
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 </style>
 </head>
 <body>
 
 <div class="app-container">
+  <!-- <header>
+    <h1>砖块计算器 Pro</h1> 
+    <div class="header-meta">
+      <span class="meta-tag" id="chip_price">--</span>
+      <span class="meta-tag" id="chip_lifang">--</span>
+    </div> 
+  </header> -->
+
   <div class="card">
     <div class="section-title">快速计算</div>
     
     <div class="field">
       <label class="field-label">1. 选择砖块规格</label>
-      <select id="specSelect" onchange="calculate()"></select>
+      <div class="select-wrapper">
+        <select id="specSelect" onchange="calculate()"></select>
+      </div>
     </div>
 
     <div class="field">
       <label class="field-label">2. 选择输入模式并填写</label>
       <div class="segmented-control">
-        <button class="segment-btn active" id="btn-jiashu" onclick="setMode('jiashu')">按架数</button>
-        <button class="segment-btn" id="btn-kuaishu" onclick="setMode('kuaishu')">按块数</button>
-        <button class="segment-btn" id="btn-mianji" onclick="setMode('mianji')">按面积</button>
+        <button class="segment-btn active" id="btn-jiashu" onclick="setMode('jiashu')">按架数算</button>
+        <button class="segment-btn" id="btn-kuaishu" onclick="setMode('kuaishu')">按块数算</button>
+        <button class="segment-btn" id="btn-mianji" onclick="setMode('mianji')">按面积算</button>
       </div>
-      <input type="number" id="inputVal" inputmode="decimal" placeholder="点击输入数量..." oninput="calculate()">
+      <input type="number" id="inputVal" inputmode="decimal" placeholder="点击输入数量" oninput="calculate()">
     </div>
 
     <div class="result-box" id="resultBox">
       <div class="result-grid">
         <div class="result-item"><span class="key">结果架数</span><span class="val" id="r_jia">--</span></div>
         <div class="result-item"><span class="key">结果块数</span><span class="val" id="r_kuai">--</span></div>
-        <div class="result-item"><span class="key">单块体积 (m³)</span><span class="val" id="r_perkuai">--</span></div>
+        <div class="result-item"><span class="key">单块体积 (m³)</span><span class="val td-mono" id="r_perkuai">--</span></div>
         <div class="result-item"><span class="key">总体积 (m³)</span><span class="val" id="r_lifang">--</span></div>
       </div>
       <div class="total-price-box">
@@ -152,22 +225,57 @@
     </div>
   </div>
 
-  <div class="card">
-    <div class="section-title">规格参考表</div>
-    <div class="table-container">
-      <table>
-        <thead><tr><th>规格</th><th>块/架</th><th>单块(m³)</th><th>单价</th></tr></thead>
-        <tbody id="refBody"></tbody>
-      </table>
+  <div class="card" style="padding: 16px 20px;">
+    <div class="tabs-header">
+      <div class="tab-item active" onclick="switchTab(0)">规格列表</div>
     </div>
+
+    <div class="tab-pane active" id="pane-0">
+      <div class="field" style="margin-bottom: 10px;">
+        <input type="text" id="specFilter" placeholder="搜索规格名称" oninput="renderRefTable()">
+      </div>
+      <div class="table-hint">提示：表格可左右滑动查看更多内容</div>
+      <div style="max-height: 280px; overflow: auto;">
+        <table>
+          <thead><tr><th>规格</th><th>块/架</th><th>单块(m³)</th><th>单块价格</th></tr></thead>
+          <tbody id="refBody"></tbody>
+        </table>
+      </div>
+      <div style="display: none; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--border-color);">
+        <div class="field"><label class="field-label">直接新增规格</label><input type="text" id="list_new_name" placeholder="如 12×30×60"></div>
+        <div class="result-grid" style="margin-bottom: 0;">
+          <div class="field">
+            <div class="input-with-unit">
+              <input type="number" id="list_new_perJia" inputmode="numeric" placeholder="每架块数">
+              <span class="unit-suffix">块/架</span>
+            </div>
+          </div>
+          <div class="field">
+            <div class="input-with-unit">
+              <input type="number" id="list_new_perKuai" step="any" inputmode="decimal" placeholder="单块立方">
+              <span class="unit-suffix">m³</span>
+            </div>
+          </div>
+        </div>
+        <button class="btn btn-primary btn-save-sm" onclick="addSpecFromList()">添加到规格列表</button>
+        <div class="field-msg" id="list_add_msg"></div>
+      </div>
+    </div>
+
   </div>
 </div>
 
 <script>
-// 基础数据
-const globalPrice = 180;
-let currentMode = 'jiashu';
-const specs = [
+// ── 数据初始化 (补全并修正后的数据) ───────────────────────
+let globalPrice = 180;
+let globalLifang = 1.728;
+let mode = 'jiashu';
+const DEFAULT_PRICE = 180;
+const DEFAULT_LIFANG = 1.728;
+let pendingDeleteIndex = -1;
+let pendingDeleteTimer = null;
+// 补全后的初始规格数组
+let specs = [
   { name:'8×30×60',  perJia:120, perKuai:0.0144 },
   { name:'10×30×60', perJia:96,  perKuai:0.018  },
   { name:'12×30×60', perJia:80,  perKuai:0.0216 },
@@ -176,88 +284,268 @@ const specs = [
   { name:'20×30×60', perJia:48,  perKuai:0.036  },
   { name:'24×30×60', perJia:40,  perKuai:0.0432 },
   { name:'10×24×60', perJia:120, perKuai:0.0144 },
-  { name:'12×24×60', perJia:100, perKuai:0.01728 },
+  { name:'12×24×60', perJia:100, perKuai:0.01728 }, // 修正精确值
   { name:'20×24×60', perJia:60,  perKuai:0.0288 },
-  { name:'24×24×60', perJia:50,  perKuai:0.03456 }
+  { name:'24×24×60', perJia:50,  perKuai:0.03456 }  // 修正精确值
 ];
 
+// ── 核心逻辑 ────────────────────────────────────────────────
 function init() {
+  loadData();
   renderSelect();
   renderRefTable();
+  updateUISettings();
+  bindListAddInputFlow();
 }
 
+// 载入与保存本地数据
+function loadData() {
+  const sS = localStorage.getItem('brick_specs_pro');
+  if (sS) specs = JSON.parse(sS);
+  
+  const sG = localStorage.getItem('brick_global_pro');
+  if (sG) {
+    const g = JSON.parse(sG);
+    globalPrice = g.price;
+    globalLifang = g.lifang;
+  }
+}
+function saveData() {
+  localStorage.setItem('brick_specs_pro', JSON.stringify(specs));
+  localStorage.setItem('brick_global_pro', JSON.stringify({price: globalPrice, lifang: globalLifang}));
+}
+
+// 更新界面上的设置显示
+function updateUISettings() {
+  document.getElementById('chip_price').textContent = `¥${globalPrice}/m³`;
+  document.getElementById('chip_lifang').textContent = `标准: ${globalLifang}m³`;
+  document.getElementById('edit_price').value = globalPrice;
+  document.getElementById('edit_lifang').value = globalLifang;
+}
+
+// 切换输入模式
 function setMode(m) {
-  currentMode = m;
-  // 切换高亮
-  document.querySelectorAll('.segment-btn').forEach(btn => btn.classList.remove('active'));
-  document.getElementById('btn-' + m).classList.add('active');
-  
-  // 更新占位符
+  mode = m;
+  document.getElementById('btn-jiashu').classList.toggle('active', m === 'jiashu');
+  document.getElementById('btn-kuaishu').classList.toggle('active', m === 'kuaishu');
+  document.getElementById('btn-mianji').classList.toggle('active', m === 'mianji');
+
   const inputEl = document.getElementById('inputVal');
-  const hints = { 'jiashu': '请输入架数', 'kuaishu': '请输入块数', 'mianji': '请输入总面积(㎡)' };
-  inputEl.placeholder = hints[m];
-  
+  if (m === 'jiashu') {
+    inputEl.placeholder = '请输入架数';
+  } else if (m === 'kuaishu') {
+    inputEl.placeholder = '请输入块数';
+  } else {
+    inputEl.placeholder = '请输入面积 (m²)';
+  }
   calculate();
 }
 
-function getFaceArea(name) {
-  const p = (name || '').match(/\d+/g);
-  if (!p || p.length < 3) return null;
-  // 计算侧面积：厚度(p[0])不用，取高度*长度
-  return (parseFloat(p[1]) * parseFloat(p[2])) / 10000;
+function getFaceAreaBySpecName(name) {
+  const parts = (name || '').match(/\d+(?:\.\d+)?/g);
+  if (!parts || parts.length < 3) return null;
+
+  const h = parseFloat(parts[1]);
+  const l = parseFloat(parts[2]);
+  if (!Number.isFinite(h) || !Number.isFinite(l) || h <= 0 || l <= 0) return null;
+
+  return (h * l) / 10000;
 }
 
+// 核心计算功能
 function calculate() {
-  const val = parseFloat(document.getElementById('inputVal').value);
-  const spec = specs[document.getElementById('specSelect').value];
+  const input = parseFloat(document.getElementById('inputVal').value);
+  const specIdx = document.getElementById('specSelect').value;
   
-  if (!val || val <= 0) {
+  if (!input || input <= 0 || !specs[specIdx]) {
     document.getElementById('resultBox').classList.remove('show');
     return;
   }
 
+  const spec = specs[specIdx];
   let kuaishu, jiashu;
 
-  if (currentMode === 'jiashu') {
-    jiashu = val;
-    kuaishu = Math.round(jiashu * spec.perJia);
-  } else if (currentMode === 'kuaishu') {
-    kuaishu = val;
+  if (mode === 'jiashu') {
+    jiashu = input;
+    kuaishu = Math.round(jiashu * spec.perJia); // 块数通常取整
+  } else if (mode === 'kuaishu') {
+    kuaishu = input;
     jiashu = kuaishu / spec.perJia;
   } else {
-    const area = getFaceArea(spec.name);
-    kuaishu = area ? Math.ceil(val / area) : 0;
+    const faceArea = getFaceAreaBySpecName(spec.name);
+    if (!faceArea) {
+      document.getElementById('resultBox').classList.remove('show');
+      return;
+    }
+
+    kuaishu = Math.ceil(input / faceArea);
     jiashu = kuaishu / spec.perJia;
   }
 
-  const totalV = (kuaishu * spec.perKuai).toFixed(3);
-  const totalP = (totalV * globalPrice).toFixed(2);
+  // 精确计算体积：总块数 * 单块体积
+  const totalLifang = (kuaishu * spec.perKuai).toFixed(3);
+  // 计算总价：总体积 * 每立方单价
+  const totalPrice = (parseFloat(totalLifang) * globalPrice).toFixed(2);
 
+  // 更新 DOM
   document.getElementById('r_jia').textContent = jiashu.toFixed(2);
   document.getElementById('r_kuai').textContent = kuaishu;
-  document.getElementById('r_perkuai').textContent = spec.perKuai;
-  document.getElementById('r_lifang').textContent = totalV;
-  document.getElementById('r_total').textContent = '¥ ' + totalP;
+  document.getElementById('r_perkuai').textContent = spec.perKuai.toString();
+  document.getElementById('r_lifang').textContent = totalLifang;
+  document.getElementById('r_total').textContent = '¥ ' + totalPrice;
+
   document.getElementById('resultBox').classList.add('show');
 }
 
+// ── 管理区域功能 ──────────────────────────────────────────────
 function renderSelect() {
   const sel = document.getElementById('specSelect');
-  sel.innerHTML = specs.map((s, i) => `<option value="${i}">${s.name}</option>`).join('');
+  // 按 specs 数组原始顺序渲染
+  sel.innerHTML = specs.map((s, i) => `<option value="${i}">${s.name} (${s.perJia}块/架)</option>`).join('');
 }
 
 function renderRefTable() {
   const tbody = document.getElementById('refBody');
-  tbody.innerHTML = specs.map(s => `
+  const keyword = (document.getElementById('specFilter')?.value || '').trim().toLowerCase();
+  const rows = specs
+    .map((s, i) => ({s, i}))
+    .filter(({s}) => !keyword || s.name.toLowerCase().includes(keyword));
+
+  tbody.innerHTML = rows.map(({s, i}) => {
+    // 单块价格 = 单块体积(m³) × 每立方单价
+    const pricePerKuai = (s.perKuai * globalPrice).toFixed(2);
+    return `
     <tr>
       <td class="td-spec">${s.name}</td>
       <td class="td-mono">${s.perJia}</td>
-      <td class="td-mono">${s.perKuai}</td>
-      <td class="td-mono">¥${(s.perKuai * globalPrice).toFixed(2)}</td>
+      <td class="td-mono">${s.perKuai.toString().padEnd(7, '0').substring(0,7)}</td>
+      <td class="td-mono">¥${pricePerKuai}</td>
     </tr>
-  `).join('');
+  `;
+  }).join('');
 }
 
+function setFieldMsg(id, msg, ok = false) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.textContent = msg || '';
+  el.classList.toggle('show', !!msg);
+  el.classList.toggle('ok', !!msg && ok);
+}
+
+function addSpecCore(name, pJ, pK) {
+  if (!name) return {ok: false, msg: '请填写规格名称'};
+  if (!Number.isFinite(pJ) || pJ <= 0) return {ok: false, msg: '每架块数需为大于 0 的数字'};
+  if (!Number.isFinite(pK) || pK <= 0) return {ok: false, msg: '单块体积需为大于 0 的数字'};
+  if (specs.some(s => s.name === name)) return {ok: false, msg: '该规格已存在，请勿重复添加'};
+
+  specs.push({name, perJia: pJ, perKuai: pK});
+  if (pendingDeleteTimer) clearTimeout(pendingDeleteTimer);
+  pendingDeleteIndex = -1;
+  setFieldMsg('list_add_msg', '', false);
+  saveData();
+  renderSelect();
+  renderRefTable();
+  return {ok: true, msg: '已添加'};
+}
+
+function addSpecFromList() {
+  const name = document.getElementById('list_new_name').value.trim();
+  const pJ = parseInt(document.getElementById('list_new_perJia').value);
+  const pK = parseFloat(document.getElementById('list_new_perKuai').value);
+  const result = addSpecCore(name, pJ, pK);
+
+  if (result.ok) {
+    document.getElementById('list_new_name').value = '';
+    document.getElementById('list_new_perJia').value = '';
+    document.getElementById('list_new_perKuai').value = '';
+    setFieldMsg('list_add_msg', result.msg, true);
+    document.getElementById('list_new_name').focus();
+  } else {
+    setFieldMsg('list_add_msg', result.msg, false);
+  }
+}
+
+function bindListAddInputFlow() {
+  const nameEl = document.getElementById('list_new_name');
+  const perJiaEl = document.getElementById('list_new_perJia');
+  const perKuaiEl = document.getElementById('list_new_perKuai');
+  if (!(nameEl && perJiaEl && perKuaiEl)) return;
+
+  nameEl.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      perJiaEl.focus();
+    }
+  });
+  perJiaEl.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      perKuaiEl.focus();
+    }
+  });
+  perKuaiEl.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      addSpecFromList();
+    }
+  });
+}
+
+function deleteSpec(i) {
+  if (pendingDeleteIndex !== i) {
+    pendingDeleteIndex = i;
+    if (pendingDeleteTimer) clearTimeout(pendingDeleteTimer);
+    pendingDeleteTimer = setTimeout(() => {
+      pendingDeleteIndex = -1;
+      renderRefTable();
+    }, 3000);
+    renderRefTable();
+    return;
+  }
+
+  specs.splice(i, 1);
+  pendingDeleteIndex = -1;
+  if (pendingDeleteTimer) clearTimeout(pendingDeleteTimer);
+  saveData();
+  renderSelect();
+  renderRefTable();
+  calculate();
+}
+
+function saveGlobal() {
+  const priceVal = parseFloat(document.getElementById('edit_price').value);
+  const lifangVal = parseFloat(document.getElementById('edit_lifang').value);
+
+  if (!Number.isFinite(priceVal) || priceVal <= 0) {
+    setFieldMsg('settings_msg', '每立方单价需为大于 0 的数字', false);
+    return;
+  }
+  if (!Number.isFinite(lifangVal) || lifangVal <= 0) {
+    setFieldMsg('settings_msg', '架立方需为大于 0 的数字', false);
+    return;
+  }
+
+  globalPrice = priceVal;
+  globalLifang = lifangVal;
+  saveData();
+  updateUISettings();
+  calculate();
+  setFieldMsg('settings_msg', '设置已保存', true);
+}
+
+function restoreGlobalDefaults() {
+  document.getElementById('edit_price').value = DEFAULT_PRICE;
+  document.getElementById('edit_lifang').value = DEFAULT_LIFANG;
+  saveGlobal();
+}
+
+function switchTab(idx) {
+  document.querySelectorAll('.tab-item').forEach((t, i) => t.classList.toggle('active', i === idx));
+  document.querySelectorAll('.tab-pane').forEach((p, i) => p.classList.toggle('active', i === idx));
+}
+
+// 启动
 init();
 </script>
 </body>
