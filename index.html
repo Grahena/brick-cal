@@ -228,7 +228,6 @@
   <div class="card" style="padding: 16px 20px;">
     <div class="tabs-header">
       <div class="tab-item active" onclick="switchTab(0)">规格列表</div>
-      <div class="tab-item" onclick="switchTab(1)">设置</div>
     </div>
 
     <div class="tab-pane active" id="pane-0">
@@ -238,7 +237,7 @@
       <div class="table-hint">提示：表格可左右滑动查看更多内容</div>
       <div style="max-height: 280px; overflow: auto;">
         <table>
-          <thead><tr><th>规格</th><th>块/架</th><th>单块(m³)</th></tr></thead>
+          <thead><tr><th>规格</th><th>块/架</th><th>单块(m³)</th><th>单块价格</th></tr></thead>
           <tbody id="refBody"></tbody>
         </table>
       </div>
@@ -263,25 +262,6 @@
       </div>
     </div>
 
-    <div class="tab-pane" id="pane-1">
-      <div class="field">
-        <label class="field-label">默认全局单架价格</label>
-        <div class="input-with-unit">
-          <input type="number" id="edit_price" inputmode="decimal">
-          <span class="unit-suffix">元/架</span>
-        </div>
-      </div>
-      <div class="field">
-        <label class="field-label">默认全局架立方 (仅参考)</label>
-        <div class="input-with-unit">
-          <input type="number" id="edit_lifang" inputmode="decimal">
-          <span class="unit-suffix">m³</span>
-        </div>
-      </div>
-      <button class="btn btn-primary btn-save-sm" onclick="saveGlobal()">保存设置</button>
-      <button class="btn btn-save-sm" onclick="restoreGlobalDefaults()">恢复默认值</button>
-      <div class="field-msg" id="settings_msg"></div>
-    </div>
   </div>
 </div>
 
@@ -337,7 +317,7 @@ function saveData() {
 
 // 更新界面上的设置显示
 function updateUISettings() {
-  document.getElementById('chip_price').textContent = `¥${globalPrice}/架`;
+  document.getElementById('chip_price').textContent = `¥${globalPrice}/m³`;
   document.getElementById('chip_lifang').textContent = `标准: ${globalLifang}m³`;
   document.getElementById('edit_price').value = globalPrice;
   document.getElementById('edit_lifang').value = globalLifang;
@@ -404,8 +384,8 @@ function calculate() {
 
   // 精确计算体积：总块数 * 单块体积
   const totalLifang = (kuaishu * spec.perKuai).toFixed(3);
-  // 计算总价：架数 * 单架参考价
-  const totalPrice = (jiashu * globalPrice).toFixed(2);
+  // 计算总价：总体积 * 每立方单价
+  const totalPrice = (parseFloat(totalLifang) * globalPrice).toFixed(2);
 
   // 更新 DOM
   document.getElementById('r_jia').textContent = jiashu.toFixed(2);
@@ -431,14 +411,18 @@ function renderRefTable() {
     .map((s, i) => ({s, i}))
     .filter(({s}) => !keyword || s.name.toLowerCase().includes(keyword));
 
-  tbody.innerHTML = rows.map(({s, i}) => `
+  tbody.innerHTML = rows.map(({s, i}) => {
+    // 单块价格 = 单块体积(m³) × 每立方单价
+    const pricePerKuai = (s.perKuai * globalPrice).toFixed(2);
+    return `
     <tr>
       <td class="td-spec">${s.name}</td>
       <td class="td-mono">${s.perJia}</td>
       <td class="td-mono">${s.perKuai.toString().padEnd(7, '0').substring(0,7)}</td>
-
+      <td class="td-mono">¥${pricePerKuai}</td>
     </tr>
-  `).join('');
+  `;
+  }).join('');
 }
 
 function setFieldMsg(id, msg, ok = false) {
@@ -534,7 +518,7 @@ function saveGlobal() {
   const lifangVal = parseFloat(document.getElementById('edit_lifang').value);
 
   if (!Number.isFinite(priceVal) || priceVal <= 0) {
-    setFieldMsg('settings_msg', '单架价格需为大于 0 的数字', false);
+    setFieldMsg('settings_msg', '每立方单价需为大于 0 的数字', false);
     return;
   }
   if (!Number.isFinite(lifangVal) || lifangVal <= 0) {
