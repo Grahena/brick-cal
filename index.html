@@ -412,8 +412,8 @@ function renderRefTable() {
     .filter(({s}) => !keyword || s.name.toLowerCase().includes(keyword));
 
   tbody.innerHTML = rows.map(({s, i}) => {
-    // 单块价格 = 单块体积(m³) × 每立方单价
-    const pricePerKuai = (s.perKuai * globalPrice).toFixed(2);
+    // 单块价格 = 每架立方 * 每立方单价 / 每架块数
+    const pricePerKuai = ((globalLifang * globalPrice) / s.perJia).toFixed(2);
     return `
     <tr>
       <td class="td-spec">${s.name}</td>
